@@ -22,7 +22,7 @@ cdef extern from "Kinematics.hpp" namespace "robots":
         Kinematics()
         int num_of_joints, num_free_parameters
         vector[float] forward(vector[float] joint_config);
-        vector[float] inverse(vector[float] ee_pose);
+        vector[float] inverse(vector[float] ee_pose, int free_itr, float free_min, float free_max);
 
 cdef class PyKinematics:
     cdef Kinematics *thisptr      # hold a C++ instance which we're wrapping
@@ -34,5 +34,5 @@ cdef class PyKinematics:
         return self.thisptr.num_of_joints
     def forward(self,vector[float] joint_config):
         return self.thisptr.forward(joint_config)
-    def inverse(self,vector[float] ee_pose):
-        return self.thisptr.inverse(ee_pose)
+    def inverse(self,vector[float] ee_pose, int free_itr, float free_min, float free_max):
+        return self.thisptr.inverse(ee_pose, free_itr, free_min, free_max)

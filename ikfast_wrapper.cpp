@@ -93,7 +93,8 @@ namespace robots {
         Kinematics(); 
         ~Kinematics(); 
         std::vector<float> forward(std::vector<float> joint_config);
-        std::vector<float> inverse(std::vector<float> ee_pose);
+        std::vector<float> inverse(std::vector<float> ee_pose, std::vector<float> free_vals);
+        std::vector<float> inverse(std::vector<float> ee_pose, unsigned int free_itr, double free_min, double free_max);
     }; 
     Kinematics::Kinematics() { 
         #if IK_VERSION > 54
@@ -112,7 +113,7 @@ namespace robots {
         std::vector<float> ee_pose;
 
         if( joint_config.size() != num_of_joints ) {
-            printf("\nError: (forward kinematics) expects vector of %d values describing joint angles (in radians).\n\n", num_of_joints);
+            printf("\nError: (forward kinematics) expected vector of %d values describing joint angles (in radians).\n\n", num_of_joints);
             return ee_pose;
         }
 
@@ -139,7 +140,64 @@ namespace robots {
 
         return ee_pose;
     }
-    std::vector<float> Kinematics::inverse(std::vector<float> ee_pose) {
+
+    std::vector<float> Kinematics::inverse(std::vector<float> ee_pose, unsigned int free_itr, double free_min, double free_max) {
+        /*
+        double budget_min = free_min;
+        double budget_max = free_max;
+        int remain_itr = free_itr;
+
+        std::vector<float> free_vals(1,free_min);
+        std::vector<float> joint_configs;
+
+        while(remain_itr > 0) {
+            unsigned int budget_itr = (remain_itr >= 100 ? 100 : remain_itr);
+            double budget_inc = (budget_max-budget_min)/(budget_itr+1);
+            double max_success = free_min;
+            double min_success = free_max;
+
+            for(std::size_t i = 0; i < budget_itr; ++i) {
+                free_vals[0] = budget_min + (i+1)*budget_inc + ((rand()/(RAND_MAX + 1.))-0.5)*budget_inc;
+                std::vector<float> new_configs = inverse(ee_pose, free_vals);
+                if(new_configs.size() > 0) {
+                    joint_configs.insert(joint_configs.end(), new_configs.begin(), new_configs.end());
+                    double lower_free_val = budget_min + (i+1)*budget_inc - 0.5*budget_inc;
+                    double upper_free_val = budget_min + (i+1)*budget_inc + 0.5*budget_inc;
+                    if(lower_free_val < min_success) {
+                        min_success = lower_free_val;
+                    }
+                    if(upper_free_val > max_success) {
+                        max_success = upper_free_val;
+                    }
+                }
+            }            
+
+            if(min_success > budget_min) {
+                budget_min = min_success;
+            }
+            if(max_success < budget_max) {
+                budget_max = max_success;
+            }
+
+            remain_itr -= budget_itr;
+        }*/
+        
+        
+        double free_inc = (free_max-free_min)/(free_itr+1);
+        std::vector<float> free_vals(1,free_min);
+        std::vector<float> joint_configs;
+
+        for(std::size_t i = 0; i < free_itr; ++i) {
+            free_vals[0] = free_min + (i+1)*free_inc;
+            std::vector<float> new_configs = inverse(ee_pose, free_vals);
+            joint_configs.insert(joint_configs.end(), new_configs.begin(), new_configs.end());
+        }
+
+        return joint_configs;
+
+    }
+
+    std::vector<float> Kinematics::inverse(std::vector<float> ee_pose, std::vector<float> free_vals) {
         IKREAL_TYPE eerot[9],eetrans[3];
         std::vector<float> joint_configs;
 
@@ -185,8 +243,8 @@ namespace robots {
             printf("\n");
             */
 
-            // for(std::size_t i = 0; i < vfree.size(); ++i)
-            //     vfree[i] = atof(argv[13+i]);
+            for(std::size_t i = 0; i < vfree.size(); ++i)
+                 vfree[i] = free_vals[i];
 
 #if IK_VERSION > 54
             // for IKFast 56,61
@@ -196,7 +254,7 @@ namespace robots {
             bool bSuccess = ik(eetrans, eerot, vfree.size() > 0 ? &vfree[0] : NULL, vsolutions);
 #endif
             if( !bSuccess ) {
-                fprintf(stderr,"Error: (inverse kinematics) failed to get ik solution\n");
+                //fprintf(stderr,"Error: (inverse kinematics) failed to get ik solution\n");
                 return joint_configs;
             }
 
@@ -253,6 +311,8 @@ namespace robots {
             eerot[6] = ee_pose[8]; eerot[7] = ee_pose[9]; eerot[8] = ee_pose[10]; eetrans[2] = ee_pose[11];
             // for(std::size_t i = 0; i < vfree.size(); ++i)
             //     vfree[i] = atof(argv[13+i]);
+            for(std::size_t i = 0; i < vfree.size(); ++i)
+                 vfree[i] = free_vals[i];            
 
 #if IK_VERSION > 54
             // for IKFast 56,61
@@ -262,7 +322,7 @@ namespace robots {
             bool bSuccess = ik(eetrans, eerot, vfree.size() > 0 ? &vfree[0] : NULL, vsolutions);
 #endif
             if( !bSuccess ) {
-                fprintf(stderr,"Error: (inverse kinematics) failed to get ik solution\n");
+                //fprintf(stderr,"Error: (inverse kinematics) failed to get ik solution %f\n", vfree[0]);
                 return joint_configs;
             }
 

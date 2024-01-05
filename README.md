@@ -1,7 +1,5 @@
 # IKFastPy - UR5 IKFast Python Package
 
-<img src="images/closed-loop-grasping.gif" height=200px align="right" />
-
 This is a lightweight Python wrapper over [OpenRave's](http://openrave.org/) generated [IKFast](http://openrave.org/docs/0.8.2/openravepy/ikfast/) C++ executables for the UR5 robot arm (e-series XML files included). IKFast <i>"analytically solves robot inverse kinematics equations and generates optimized C++ files"</i> for fast runtime speeds (more about IKFast [here](http://openrave.org/docs/0.8.2/openravepy/ikfast/)). IKFast can be used in tandem with [URScript](http://www.sysaxes.com/manuels/scriptmanual_en_3.1.pdf) `speedj` commands on UR robot arms for real-time motion planning, which was used to create the visual servoing demo shown on the right (part of an ongoing project on closed-loop grasping with deep learning). Why `speedj`? See this UR [performance analysis report](http://orbit.dtu.dk/files/105275650/ur10_performance_analysis.pdf).
 
 Note: this package can be [easily modified](#modifying-robot-kinematics-with-openrave) to support other robot arms.
@@ -43,23 +41,18 @@ This implementation requires the following dependencies (tested on Ubuntu 16.04.
 
 ## Modifying Robot Kinematics with OpenRave
 
-1. Download and install [OpenRave](http://openrave.org/). See [these installation instructions](https://scaron.info/teaching/installing-openrave-on-ubuntu-16.04.html) for Ubuntu 16.04.
+1. Install [OpenRave](https://robots.uc3m.es/installation-guides/install-openrave.html)
+
+1. Update panda.dae for Franka. Install ros1, then can use xacro to compile urdf:
+`rosrun xacro xacro --inorder -o model.urdf model.urdf.xacro`. Convert urdf to .dae with [urdf_to_collada](https://wiki.ros.org/collada_urdf)
+
+1. Use OpenRave to re-generate the IKFast C++ code `ikfast61.cpp`. `openrave.py --database inversekinematics --robot=panda.xml iktype=transform6d --iktests=1000`. Note where the output is saved.
 
 1. Modify the kinematics of the arm or TCP position (link6) by changing `ur5.robot.xml` respectively. You can find a description of the OpenRave XML file format [here](http://openrave.programmingvision.com/wiki/index.php/Format:XML).
 
-1. (Optional) Debug the kinematics using OpenRave's viewer:
-    ```shell
-    openrave ur5.robot.xml
-    ```
-
 1. (Optional) Check the links in your file:
     ```shell
-    openrave-robot.py ur5.robot.xml --info links
-    ```
-
-1. Use OpenRave to re-generate the IKFast C++ code `ikfast61.cpp`. 
-    ```shell
-    python `openrave-config --python-dir`/openravepy/_openravepy_/ikfast.py --robot=ur5.robot.xml --iktype=transform6d --baselink=0 --eelink=6 --savefile=ikfast61.cpp --maxcasedepth 1
+    openrave-robot.py panda.xml --info links
     ```
 
 ## Citation
