@@ -93,7 +93,7 @@ class JointController(Node):
 
     def feedback_callback(self, feedback_msg):
         feedback = feedback_msg.feedback
-        self.get_logger().info('Received feedback: {0}'.format(feedback))
+        #self.get_logger().info('Received feedback: {0}'.format(feedback))
 
 def main(args=None):
     rclpy.init(args=args)

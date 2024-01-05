@@ -41,19 +41,9 @@ This implementation requires the following dependencies (tested on Ubuntu 16.04.
 
 ## Modifying Robot Kinematics with OpenRave
 
-1. Install [OpenRave](https://robots.uc3m.es/installation-guides/install-openrave.html)
+1. Generate ikfast files: `cd ./generate_ik_fast && bash create_ik_fast.sh --iktype Transform6d --keep panda.urdf arm panda_link0 panda_link8`
 
-1. Update panda.dae for Franka. Install ros1, then can use xacro to compile urdf:
-`rosrun xacro xacro --inorder -o model.urdf model.urdf.xacro`. Convert urdf to .dae with [urdf_to_collada](https://wiki.ros.org/collada_urdf)
-
-1. Use OpenRave to re-generate the IKFast C++ code `ikfast61.cpp`. `openrave.py --database inversekinematics --robot=panda.xml iktype=transform6d --iktests=1000`. Note where the output is saved.
-
-1. Modify the kinematics of the arm or TCP position (link6) by changing `ur5.robot.xml` respectively. You can find a description of the OpenRave XML file format [here](http://openrave.programmingvision.com/wiki/index.php/Format:XML).
-
-1. (Optional) Check the links in your file:
-    ```shell
-    openrave-robot.py panda.xml --info links
-    ```
+1. Copy the .cpp and .h files back to the main directory
 
 ## Citation
 

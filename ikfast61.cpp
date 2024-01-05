@@ -12,8 +12,7 @@
 /// See the License for the specific language governing permissions and
 /// limitations under the License.
 ///
-/// ikfast version 0x1000004b generated on 2024-01-03 15:33:02.644510
-/// Generated using solver transform6d
+/// ikfast version 0x10000049 generated on 2024-01-05 15:09:11.713231
 /// To compile with gcc:
 ///     gcc -lstdc++ ik.cpp
 /// To compile without any main function as a shared object (might need -llapack):
@@ -24,7 +23,7 @@ using namespace ikfast;
 
 // check if the included ikfast version matches what this file was compiled with
 #define IKFAST_COMPILE_ASSERT(x) extern int __dummy[(int)x]
-IKFAST_COMPILE_ASSERT(IKFAST_VERSION==0x1000004b);
+IKFAST_COMPILE_ASSERT(IKFAST_VERSION==0x10000049);
 
 #include <cmath>
 #include <vector>
@@ -115,7 +114,7 @@ inline double IKlog(double f) { return log(f); }
 
 // there are checkpoints in ikfast that are evaluated to make sure they are 0. This threshold speicfies by how much they can deviate
 #ifndef IKFAST_EVALCOND_THRESH
-#define IKFAST_EVALCOND_THRESH ((IkReal)0.03) // 5D IK has some crazy degenerate cases, but can rely on jacobian refinment to make better, just need good starting point
+#define IKFAST_EVALCOND_THRESH ((IkReal)0.00001)
 #endif
 
 
@@ -295,20 +294,6 @@ inline CheckValue<T> IKPowWithIntegerCheck(T f, int n)
     return ret;
 }
 
-template <typename T> struct ComplexLess
-{
-    bool operator()(const complex<T>& lhs, const complex<T>& rhs) const
-    {
-        if (real(lhs) < real(rhs)) {
-            return true;
-        }
-        if (real(lhs) > real(rhs)) {
-            return false;
-        }
-        return imag(lhs) < imag(rhs);
-    }
-};
-
 /// solves the forward kinematics equations.
 /// \param pfree is an array specifying the free joints of the chain.
 IKFAST_API void ComputeFk(const IkReal* j, IkReal* eetrans, IkReal* eerot) {
@@ -402,7 +387,7 @@ eetrans[2]=((0.333)+((x12*(((((0.088)*x34))+((x22*x73))))))+((x13*((((x14*x38))+
 }
 
 IKFAST_API int GetNumFreeParameters() { return 1; }
-IKFAST_API const int* GetFreeIndices() { static const int freeindices[] = {6}; return freeindices; }
+IKFAST_API int* GetFreeParameters() { static int freeparams[] = {6}; return freeparams; }
 IKFAST_API int GetNumJoints() { return 7; }
 
 IKFAST_API int GetIkRealSize() { return sizeof(IkReal); }
@@ -3358,7 +3343,7 @@ IkReal x142=((8.0)*new_r00);
 IkReal x143=(x137*x138);
 IkReal x144=(x137*x139);
 j0eval[0]=((IKabs((((new_r11*x140))+(((16.0)*new_r00))+(((-32.0)*new_r00*x137)))))+(IKabs((((x137*x141))+(((-1.0)*new_r22*x142)))))+(IKabs(((((-1.0)*x143))+x138)))+(IKabs(((((32.0)*new_r11))+(((-16.0)*new_r11*x137))+(((-1.0)*new_r00*x140)))))+(IKabs((x143+(((-1.0)*x138)))))+(IKabs(((((-1.0)*x144))+x139)))+(IKabs(((((-1.0)*x142))+((new_r22*x141)))))+(IKabs((x144+(((-1.0)*x139))))));
-if( IKabs(j0eval[0]) < 0.0000000100000000  )
+if( IKabs(j0eval[0]) < 0.0000000010000000  )
 {
 continue; // no branches [j0, j2]
 
@@ -3419,7 +3404,7 @@ IkReal x154=(new_r11*x151);
 IkReal x155=(x150*x151);
 IkReal x156=((8.0)*x154);
 j0evalpoly[0]=((((-1.0)*x153))+((htj0*(((((-1.0)*x155))+x150))))+x156+(((htj0*htj0)*(((((32.0)*new_r11))+(((-16.0)*x152))+(((-16.0)*x154))))))+(((htj0*htj0*htj0)*(((((-1.0)*x150))+x155))))+(((htj0*htj0*htj0*htj0)*(((((-1.0)*x153))+x156)))));
-if( IKabs(j0evalpoly[0]) > 0.0000001000000000  )
+if( IKabs(j0evalpoly[0]) > 0.0000000010000000  )
 {
     continue;
 }
@@ -12649,9 +12634,6 @@ solutions.AddSolution(vinfos,vfree);
         }
     }
 
-    // sort roots hoping that it solution indices become more robust to slight change in coeffs
-    std::sort(roots, roots+3, ComplexLess<IkReal>());
-
     numroots = 0;
     bool visited[3] = {false};
     for(int i = 0; i < 3; ++i) {
@@ -12662,7 +12644,7 @@ solutions.AddSolution(vinfos,vfree);
             int n = 1;
             for(int j = i+1; j < 3; ++j) {
                 // care about error in real much more than imaginary
-                if( abs(real(roots[i])-real(roots[j])) < tolsqrt && (abs(imag(roots[i])-imag(roots[j])) < 0.002 || abs(imag(roots[i])+imag(roots[j])) < 0.002) && abs(imag(roots[i])) < 0.002 ) {
+                if( abs(real(roots[i])-real(roots[j])) < tolsqrt && abs(imag(roots[i])-imag(roots[j])) < 0.002 ) {
                     newroot += roots[j];
                     n += 1;
                     visited[j] = true;
@@ -12746,9 +12728,6 @@ static inline void polyroots4(IkReal rawcoeffs[4+1], IkReal rawroots[4], int& nu
         }
     }
 
-    // sort roots hoping that it solution indices become more robust to slight change in coeffs
-    std::sort(roots, roots+4, ComplexLess<IkReal>());
-
     numroots = 0;
     bool visited[4] = {false};
     for(int i = 0; i < 4; ++i) {
@@ -12759,7 +12738,7 @@ static inline void polyroots4(IkReal rawcoeffs[4+1], IkReal rawroots[4], int& nu
             int n = 1;
             for(int j = i+1; j < 4; ++j) {
                 // care about error in real much more than imaginary
-                if( abs(real(roots[i])-real(roots[j])) < tolsqrt && (abs(imag(roots[i])-imag(roots[j])) < 0.002 || abs(imag(roots[i])+imag(roots[j])) < 0.002) && abs(imag(roots[i])) < 0.002 ) {
+                if( abs(real(roots[i])-real(roots[j])) < tolsqrt && abs(imag(roots[i])-imag(roots[j])) < 0.002 ) {
                     newroot += roots[j];
                     n += 1;
                     visited[j] = true;
@@ -12792,7 +12771,7 @@ return solver.ComputeIk(eetrans,eerot,pfree,solutions);
 
 IKFAST_API const char* GetKinematicsHash() { return "ecd9cbb23ff18ce9438f30f09eede2b8"; }
 
-IKFAST_API const char* GetIkFastVersion() { return "0x1000004b"; }
+IKFAST_API const char* GetIkFastVersion() { return "0x10000049"; }
 
 #ifdef IKFAST_NAMESPACE
 } // end namespace
